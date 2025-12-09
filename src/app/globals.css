@@ -1,0 +1,52 @@
+@import 'tailwindcss';
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ===== スクロールバー：ダークグレー細め ===== */
+
+.scrollbar-dark-thin {
+  /* Firefox 用 */
+  scrollbar-width: thin;
+  scrollbar-color: #52525b #18181b; /* 親指の色 / 背景の色 */
+}
+
+/* Chrome / Edge / Safari 用 */
+.scrollbar-dark-thin::-webkit-scrollbar {
+  width: 8px; /* スクロールバーの太さ */
+}
+
+.scrollbar-dark-thin::-webkit-scrollbar-track {
+  background: #18181b; /* トラック（背景）*/
+}
+
+.scrollbar-dark-thin::-webkit-scrollbar-thumb {
+  background: #52525b; /* つまみ部分の色（ダークグレー） */
+  border-radius: 9999px; /* 丸み */
+}
+
+.scrollbar-dark-thin::-webkit-scrollbar-thumb:hover {
+  background: #71717a; /* ホバー時、少しだけ明るく */
+}
