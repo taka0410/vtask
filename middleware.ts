@@ -5,7 +5,12 @@ const CANONICAL_HOST = 'vtask-xfq3.vercel.app';
 export function middleware(req: NextRequest) {
   const host = req.headers.get('host');
 
-  // host が本番URL以外なら、本番URLへリダイレクト
+  // ローカル開発は無視
+  if (host?.includes('localhost')) {
+    return NextResponse.next();
+  }
+
+  // 本番URL以外は canonical にリダイレクト
   if (host && host !== CANONICAL_HOST) {
     const url = req.nextUrl.clone();
     url.host = CANONICAL_HOST;
@@ -16,7 +21,6 @@ export function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-// Nextの静的ファイル等は除外
 export const config = {
-  matcher: ['/((?!_next|favicon.ico|icon.svg).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon.svg).*)'],
 };
