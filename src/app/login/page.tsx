@@ -31,7 +31,7 @@ export default function LoginPage() {
           throw err;
         }
       });
-      router.push('/'); // ログイン後のトップへ
+      router.push('/app'); // ログイン後のトップへ
     } catch (e: any) {
       setError(e?.message ?? 'ログインに失敗しました');
     } finally {
