@@ -45,7 +45,7 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      router.push('/');
+      router.push('/app');
     } catch (e: any) {
       setError(e?.message ?? 'Googleログインに失敗しました');
     } finally {
