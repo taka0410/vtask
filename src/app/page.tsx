@@ -6,20 +6,41 @@ export default function Home() {
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <div className="mx-auto max-w-4xl px-4 py-10 md:py-16">
         {/* Header */}
-        <header className="flex items-center justify-between gap-4 mb-10">
+        <header className="mb-10 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/20 text-sky-300 text-lg font-bold">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/20 text-lg font-bold text-sky-300">
               V
             </span>
-            <span className="text-lg font-semibold tracking-tight">Vtask</span>
+            <span className="text-base font-semibold tracking-tight sm:text-lg">
+              Vtask
+            </span>
           </div>
 
-          <Link
-            href="/app"
-            className="rounded-full border border-sky-500/60 bg-sky-500/10 px-4 py-2 text-sm font-medium hover:bg-sky-500/30 transition"
-          >
-            アプリを使ってみる
-          </Link>
+          <div className="flex items-center gap-2">
+            {/* 体験してみる（ゲスト） */}
+            <Link
+              href="/guest" // ←あなたのゲスト用ルートに合わせて変更
+              className="rounded-full border border-slate-700 bg-slate-900/40 px-3 py-1.5 text-xs font-medium text-slate-100
+                 transition
+                 hover:border-sky-500/60 hover:bg-sky-500/10 hover:shadow-lg hover:shadow-sky-500/20
+                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60
+                 active:scale-[0.99] sm:px-4 sm:py-2 sm:text-sm"
+            >
+              体験してみる
+            </Link>
+
+            {/* アプリを使ってみる（ログイン前提） */}
+            <Link
+              href="/app"
+              className="rounded-full border border-sky-500/60 bg-sky-500/10 px-3 py-1.5 text-xs font-medium
+                 transition
+                 hover:bg-sky-500/30 hover:shadow-lg hover:shadow-sky-500/20
+                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60
+                 active:scale-[0.99] sm:px-4 sm:py-2 sm:text-sm"
+            >
+              アプリを使ってみる
+            </Link>
+          </div>
         </header>
 
         {/* Hero */}
@@ -38,13 +59,22 @@ export default function Home() {
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/app"
-              className="rounded-lg bg-sky-500 px-5 py-2.5 text-sm md:text-base font-semibold text-slate-950 shadow-md hover:bg-sky-400 transition"
+              className="rounded-lg bg-sky-500 px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-md
+               transition hover:bg-sky-400"
             >
               今すぐ使ってみる（無料）
             </Link>
-            <span className="text-xs md:text-sm text-slate-400">
-              ログイン後から利用できます
-            </span>
+
+            <Link
+              href="/guest" // ←あなたのゲスト用ルートに合わせて変更
+              className="rounded-lg border border-slate-700 bg-slate-900/40 px-5 py-2.5 text-sm font-semibold text-slate-100
+               transition
+               hover:border-sky-500/60 hover:bg-sky-500/10 hover:shadow-lg hover:shadow-sky-500/20
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60
+               active:scale-[0.99]"
+            >
+              体験してみる
+            </Link>
           </div>
         </section>
 

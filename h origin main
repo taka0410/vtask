@@ -1,0 +1,111 @@
+warning: in the working copy of 'src/app/layout.tsx', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/src/app/layout.tsx b/src/app/layout.tsx[m
+[1mindex 24f4155..ce6d174 100644[m
+[1m--- a/src/app/layout.tsx[m
+[1m+++ b/src/app/layout.tsx[m
+[36m@@ -1,7 +1,10 @@[m
+[32m+[m[32m// app/layout.tsx[m
+ import type { Metadata } from 'next';[m
+ import { Geist, Geist_Mono } from 'next/font/google';[m
+ import './globals.css';[m
+ [m
+[32m+[m[32mimport { AuthProvider } from '@/contexts/AuthContext'; // ★追加（パスは後述）[m
+[32m+[m
+ const geistSans = Geist({[m
+   variable: '--font-geist-sans',[m
+   subsets: ['latin'],[m
+[36m@@ -24,8 +27,10 @@[m [mexport default function RootLayout({[m
+ }) {[m
+   return ([m
+     <html lang="ja">[m
+[31m-      <body>[m
+[31m-        <main>{children}</main>[m
+[32m+[m[32m      <body className={`${geistSans.variable} ${geistMono.variable}`}>[m
+[32m+[m[32m        <AuthProvider>[m
+[32m+[m[32m          <main>{children}</main>[m
+[32m+[m[32m        </AuthProvider>[m
+       </body>[m
+     </html>[m
+   );[m
+[1mdiff --git a/src/app/page.tsx b/src/app/page.tsx[m
+[1mindex 4bcb8d6..24cf930 100644[m
+[1m--- a/src/app/page.tsx[m
+[1m+++ b/src/app/page.tsx[m
+[36m@@ -6,20 +6,41 @@[m [mexport default function Home() {[m
+     <main className="min-h-screen bg-slate-950 text-slate-50">[m
+       <div className="mx-auto max-w-4xl px-4 py-10 md:py-16">[m
+         {/* Header */}[m
+[31m-        <header className="flex items-center justify-between gap-4 mb-10">[m
+[32m+[m[32m        <header className="mb-10 flex flex-wrap items-center justify-between gap-3">[m
+           <div className="flex items-center gap-2">[m
+[31m-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/20 text-sky-300 text-lg font-bold">[m
+[32m+[m[32m            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/20 text-lg font-bold text-sky-300">[m
+               V[m
+             </span>[m
+[31m-            <span className="text-lg font-semibold tracking-tight">Vtask</span>[m
+[32m+[m[32m            <span className="text-base font-semibold tracking-tight sm:text-lg">[m
+[32m+[m[32m              Vtask[m
+[32m+[m[32m            </span>[m
+           </div>[m
+ [m
+[31m-          <Link[m
+[31m-            href="/app"[m
+[31m-            className="rounded-full border border-sky-500/60 bg-sky-500/10 px-4 py-2 text-sm font-medium hover:bg-sky-500/30 transition"[m
+[31m-          >[m
+[31m-            アプリを使ってみる[m
+[31m-          </Link>[m
+[32m+[m[32m          <div className="flex items-center gap-2">[m
+[32m+[m[32m            {/* 体験してみる（ゲスト） */}[m
+[32m+[m[32m            <Link[m
+[32m+[m[32m              href="/guest" // ←あなたのゲスト用ルートに合わせて変更[m
+[32m+[m[32m              className="rounded-full border border-slate-700 bg-slate-900/40 px-3 py-1.5 text-xs font-medium text-slate-100[m
+[32m+[m[32m                 transition[m
+[32m+[m[32m                 hover:border-sky-500/60 hover:bg-sky-500/10 hover:shadow-lg hover:shadow-sky-500/20[m
+[32m+[m[32m                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60[m
+[32m+[m[32m                 active:scale-[0.99] sm:px-4 sm:py-2 sm:text-sm"[m
+[32m+[m[32m            >[m
+[32m+[m[32m              体験してみる[m
+[32m+[m[32m            </Link>[m
+[32m+[m
+[32m+[m[32m            {/* アプリを使ってみる（ログイン前提） */}[m
+[32m+[m[32m            <Link[m
+[32m+[m[32m              href="/app"[m
+[32m+[m[32m              className="rounded-full border border-sky-500/60 bg-sky-500/10 px-3 py-1.5 text-xs font-medium[m
+[32m+[m[32m                 transition[m
+[32m+[m[32m                 hover:bg-sky-500/30 hover:shadow-lg hover:shadow-sky-500/20[m
+[32m+[m[32m                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60[m
+[32m+[m[32m                 active:scale-[0.99] sm:px-4 sm:py-2 sm:text-sm"[m
+[32m+[m[32m            >[m
+[32m+[m[32m              アプリを使ってみる[m
+[32m+[m[32m            </Link>[m
+[32m+[m[32m          </div>[m
+         </header>[m
+ [m
+         {/* Hero */}[m
+[36m@@ -38,13 +59,22 @@[m [mexport default function Home() {[m
+           <div className="flex flex-wrap items-center gap-3">[m
+             <Link[m
+               href="/app"[m
+[31m-              className="rounded-lg bg-sky-500 px-5 py-2.5 text-sm md:text-base font-semibold text-slate-950 shadow-md hover:bg-sky-400 transition"[m
+[32m+[m[32m              className="rounded-lg bg-sky-500 px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-md[m
+[32m+[m[32m               transition hover:bg-sky-400"[m
+             >[m
+               今すぐ使ってみる（無料）[m
+             </Link>[m
+[31m-            <span className="text-xs md:text-sm text-slate-400">[m
+[31m-              ログイン後から利用できます[m
+[31m-            </span>[m
+[32m+[m
+[32m+[m[32m            <Link[m
+[32m+[m[32m              href="/guest" // ←あなたのゲスト用ルートに合わせて変更[m
+[32m+[m[32m              className="rounded-lg border border-slate-700 bg-slate-900/40 px-5 py-2.5 text-sm font-semibold text-slate-100[m
+[32m+[m[32m               transition[m
+[32m+[m[32m               hover:border-sky-500/60 hover:bg-sky-500/10 hover:shadow-lg hover:shadow-sky-500/20[m
+[32m+[m[32m               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60[m
+[32m+[m[32m               active:scale-[0.99]"[m
+[32m+[m[32m            >[m
+[32m+[m[32m              体験してみる[m
+[32m+[m[32m            </Link>[m
+           </div>[m
+         </section>[m
+ [m
