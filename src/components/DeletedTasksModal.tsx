@@ -1,75 +1,88 @@
 'use client';
 
-import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useEffect, useState } from 'react';
 import type { Task } from '@/types/task';
 
-// ← ここが超重要。listenTrash / restoreTask / hardDeleteTask / purgeAllTrash を使います
-import {
-  listenTrash, // status === 'trash' の一覧を購読
-  restoreTask, // 1件を元に戻す（deletedFrom へ）
-  hardDeleteTask, // 1件を完全削除（物理削除）
-  purgeAllTrash, // 全件完全削除（物理削除）
-  getAutoPurgeFlag, // 自動削除のON/OFFをlocalStorageに保存/取得
-  setAutoPurgeFlag,
-  purgeOldDeletedIfAutoOn, // 自動削除（3ヶ月）を走らせる
-} from '@/lib/tasks';
+// ★ここをあなたの実装に合わせて変更してください
+// 例：useTasks() / useTaskActions() / useTaskRepo() など
+import { useTaskRepo } from '@/contexts/TaskRepoProvider';
 
-// お好みでモーダルのUIは既存のものを使ってOK
+type Unsub = () => void;
+
+// localStorageキーはこのファイル内で完結させる（UI設定なのでOK）
+const AUTO_PURGE_KEY = 'vtask:autoPurgeTrash';
+
+function getAutoPurgeFlag() {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(AUTO_PURGE_KEY) === '1';
+}
+function setAutoPurgeFlag(v: boolean) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(AUTO_PURGE_KEY, v ? '1' : '0');
+}
+
 export default function DeletedTasksModal() {
+  const repo = useTaskRepo(); // ★guest/firestore を repo 側で吸収
+
   const [open, setOpen] = useState(false);
 
   // 削除済みリスト
   const [list, setList] = useState<Task[] | undefined>(undefined);
 
-  // クリック連打を防ぐための状態
+  // クリック連打防止
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
 
   // 自動削除フラグ
   const [autoPurge, setAutoPurge] = useState(false);
 
+  // 起動時：フラグ読み取り + trash購読 + 必要なら古いtrash掃除
   useEffect(() => {
-    // 起動時に自動削除がONなら古いゴミ箱を掃除
-    purgeOldDeletedIfAutoOn().catch(() => void 0);
+    const flag = getAutoPurgeFlag();
+    setAutoPurge(flag);
 
-    const unsub = listenTrash((items) => {
-      setList(items);
-    });
+    // フラグONなら「古い削除済みを掃除」
+    if (flag) {
+      repo.purgeOldTrash?.({ months: 3 }).catch(() => void 0);
+    }
+
+    // trash購読
+    const unsub: Unsub = repo.listenTrash((items: Task[]) => setList(items));
     return () => {
       try {
-        unsub();
+        unsub?.();
       } catch {
-        /* no-op */
+        /* noop */
       }
     };
-  }, []);
+  }, [repo]);
 
-  // 自動削除フラグの読み書き
-  useEffect(() => {
-    setAutoPurge(getAutoPurgeFlag());
-  }, []);
   const toggleAutoPurge = () => {
     const next = !autoPurge;
     setAutoPurge(next);
     setAutoPurgeFlag(next);
-    // ONにしたタイミングで一度掃除を走らせると分かりやすい
-    if (next) purgeOldDeletedIfAutoOn().catch(() => void 0);
+
+    if (next) {
+      repo.purgeOldTrash?.({ months: 3 }).catch(() => void 0);
+    }
   };
 
   // 1件復元
   const onRestore = async (t: Task) => {
     if (busyIds.has(t.id)) return;
+
     const next = new Set(busyIds);
     next.add(t.id);
     setBusyIds(next);
+
     try {
-      await restoreTask(t); // ← moveTask ではなく restoreTask を必ず使う
-      // onSnapshot で即座に消える（= listenTrash が正しく動いていれば）
+      await repo.restoreTask(t);
+      // listenTrash が効いていれば即消える
     } catch (e) {
       console.error('[restoreTask failed]', e);
       alert('元に戻すに失敗しました。コンソールを確認してください。');
     } finally {
-      const n2 = new Set(busyIds);
+      const n2 = new Set(next);
       n2.delete(t.id);
       setBusyIds(n2);
     }
@@ -78,23 +91,25 @@ export default function DeletedTasksModal() {
   // 1件完全削除
   const onHardDelete = async (t: Task) => {
     if (
-      confirm(
-        `削除済みを ${list?.length ?? 0} 件、完全に削除します。元に戻せません。よろしいですか？`
+      !confirm(
+        `「${t.title}」を完全に削除します。元に戻せません。よろしいですか？`
       )
     )
       return;
+
     if (busyIds.has(t.id)) return;
+
     const next = new Set(busyIds);
     next.add(t.id);
     setBusyIds(next);
+
     try {
-      await hardDeleteTask(t.id);
-      // onSnapshot で即座に消える
+      await repo.hardDeleteTask(t.id);
     } catch (e) {
       console.error('[hardDeleteTask failed]', e);
       alert('削除に失敗しました。コンソールを確認してください。');
     } finally {
-      const n2 = new Set(busyIds);
+      const n2 = new Set(next);
       n2.delete(t.id);
       setBusyIds(n2);
     }
@@ -103,19 +118,17 @@ export default function DeletedTasksModal() {
   // 一括完全削除
   const onPurgeAll = async () => {
     if (!list?.length) return;
+
     if (
       !confirm(
         `削除済みを ${list.length} 件、完全に削除します。元に戻せません。よろしいですか？`
       )
     )
       return;
+
     setBulkBusy(true);
     try {
-      const count = await purgeAllTrash();
-      // 成功していれば購読でスッと0件になる
-      if (count === 0) {
-        // 0でも購読によりUI側は正しいので何もしない
-      }
+      await repo.purgeAllTrash();
     } catch (e) {
       console.error('[purgeAllTrash failed]', e);
       alert('一括削除に失敗しました。コンソールを確認してください。');
@@ -126,7 +139,6 @@ export default function DeletedTasksModal() {
 
   return (
     <div>
-      {/* モーダルを開くトリガー（お好みで） */}
       <button
         type="button"
         className="px-3 py-1 rounded bg-gray-700 text-white cursor-pointer"
@@ -144,13 +156,11 @@ export default function DeletedTasksModal() {
             className="relative bg-white rounded-xl w-[min(700px,92vw)] p-4 text-neutral-800"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* ヘッダー */}
             <div className="flex items-center justify-between gap-3 pr-10">
               <h2 className="font-semibold text-lg text-neutral-900">
                 削除済みタスク
               </h2>
 
-              {/* PC版：ヘッダー右側に「自動削除」と「一括削除」を表示 */}
               <div className="hidden md:flex items-center gap-3">
                 <label className="inline-flex items-center gap-2 text-sm text-neutral-700 cursor-pointer select-none">
                   <input
@@ -172,7 +182,6 @@ export default function DeletedTasksModal() {
                 </button>
               </div>
 
-              {/* 閉じるボタン（画面サイズ共通） */}
               <button
                 type="button"
                 className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 cursor-pointer"
@@ -182,7 +191,6 @@ export default function DeletedTasksModal() {
               </button>
             </div>
 
-            {/* 削除済みタスク一覧 */}
             <div className="mt-5 flex flex-col gap-2 max-h-[60vh] overflow-auto">
               {list === undefined ? (
                 <p className="text-sm text-neutral-600">読み込み中…</p>
@@ -198,14 +206,12 @@ export default function DeletedTasksModal() {
                       key={t.id}
                       className="flex items-center justify-between gap-3 px-2 py-2 border rounded-md"
                     >
-                      {/* ▼ タイトル部分：長文を省略してボタンを圧迫しない */}
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-neutral-800 truncate">
                           {t.title}
                         </div>
                       </div>
 
-                      {/* ▼ ボタン部分：横並びを維持（shrink禁止） */}
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
@@ -230,7 +236,6 @@ export default function DeletedTasksModal() {
               )}
             </div>
 
-            {/* スマホ版：下部に「自動削除」と「一括削除」を表示 */}
             <div className="mt-4 flex flex-col gap-3 md:hidden">
               <label className="inline-flex items-center gap-2 text-sm text-neutral-700 cursor-pointer select-none">
                 <input

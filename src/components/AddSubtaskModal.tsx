@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { createSubtask } from '@/lib/subtasks';
+import { useSubtaskRepo } from '@/contexts/SubtaskRepoContext';
 import { createPortal } from 'react-dom';
 import { Plus } from 'lucide-react';
 
@@ -19,6 +19,7 @@ export default function AddSubtaskModal({
   const [title, setTitle] = useState('');
   const [note, setNote] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const repo = useSubtaskRepo();
 
   useEffect(() => {
     if (open) {
@@ -42,7 +43,7 @@ export default function AddSubtaskModal({
       setIsSaving(true);
       console.log('[AddSubtaskModal] save() start', { parentId, title });
 
-      await createSubtask(parentId, title.trim(), note.trim());
+      await repo.createSubtask(parentId, title.trim(), note.trim());
       console.log('[AddSubtaskModal] save() success');
 
       setTitle('');
@@ -119,9 +120,16 @@ export default function AddSubtaskModal({
                     save();
                   }}
                   onKeyDownCapture={(e) => {
+                    const target = e.target as HTMLElement;
+
                     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                       e.preventDefault();
-                      save();
+                      void save();
+                      return;
+                    }
+
+                    if (e.key === 'Enter' && target.tagName !== 'TEXTAREA') {
+                      e.preventDefault();
                     }
                   }}
                 >
@@ -158,7 +166,7 @@ export default function AddSubtaskModal({
                 </form>
               </div>
             </div>,
-            document.body
+            document.body,
           )}
     </>
   );

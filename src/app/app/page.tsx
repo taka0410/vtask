@@ -4,7 +4,24 @@ import AuthGate from '@/components/AuthGate';
 import TaskBoard from '@/components/TaskBoard';
 import DeletedTasksModal from '@/components/DeletedTasksModal';
 import { CheckSquare } from 'lucide-react';
-import UserMenu from '@/components/UserMenu'; // 相対パスなら '../components/UserMenu'
+import UserMenu from '@/components/UserMenu';
+
+import { TasksRepoProvider } from '@/contexts/TasksRepoContext';
+import { TaskWriteRepoProvider } from '@/contexts/TaskWriteRepoContext';
+import {
+  firestoreTasksRepo,
+  firestoreTaskWriteRepo,
+} from '@/repos/firestoreTasksRepo';
+import { SubtaskRepoProvider } from '@/contexts/SubtaskRepoContext';
+import { firestoreSubtaskRepo } from '@/repos/firestoreSubtaskRepo';
+
+<TasksRepoProvider repo={firestoreTasksRepo}>
+  <TaskWriteRepoProvider repo={firestoreTaskWriteRepo}>
+    <SubtaskRepoProvider repo={firestoreSubtaskRepo}>
+      <TaskBoard />
+    </SubtaskRepoProvider>
+  </TaskWriteRepoProvider>
+</TasksRepoProvider>;
 
 export default function AppPage() {
   return (
@@ -22,8 +39,11 @@ export default function AppPage() {
           </div>
         </header>
 
-        {/* ← これだけで DnD 対応の3カラム */}
-        <TaskBoard />
+        <TasksRepoProvider repo={firestoreTasksRepo}>
+          <TaskWriteRepoProvider repo={firestoreTaskWriteRepo}>
+            <TaskBoard />
+          </TaskWriteRepoProvider>
+        </TasksRepoProvider>
       </div>
     </AuthGate>
   );

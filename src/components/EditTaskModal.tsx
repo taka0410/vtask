@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import type { Task, Priority } from '@/types/task';
-import { updateTask } from '@/lib/tasks';
+import { useTaskWriteRepo } from '@/contexts/TaskWriteRepoContext';
 import { createPortal } from 'react-dom';
 
 export default function EditTaskModal({ task }: { task: Task }) {
@@ -11,6 +11,7 @@ export default function EditTaskModal({ task }: { task: Task }) {
   const [note, setNote] = useState(task.note ?? '');
   // ★ 状態は isSaving に一本化（busy を廃止）
   const [isSaving, setIsSaving] = useState(false);
+  const write = useTaskWriteRepo();
 
   useEffect(() => {
     if (open) document.body.classList.add('vtask-modal-open');
@@ -70,7 +71,7 @@ export default function EditTaskModal({ task }: { task: Task }) {
       setIsSaving(true);
 
       // ★ ここで実処理。失敗時のエラーを可視化
-      await updateTask(task.id, {
+      await write.updateTask(task.id, {
         title: title.trim(),
         priority, // Priority が '高' | '中' | '低' であることを想定
         note,
@@ -129,9 +130,13 @@ export default function EditTaskModal({ task }: { task: Task }) {
                     await save();
                   }}
                   onKeyDownCapture={(e) => {
-                    if (e.key === 'Enter' && e.ctrlKey) {
+                    if (e.key === 'Enter' && !(e.ctrlKey || e.metaKey)) {
                       e.preventDefault();
-                      save();
+                      return;
+                    }
+                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                      e.preventDefault();
+                      void save();
                     }
                   }}
                   className="space-y-3"

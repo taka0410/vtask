@@ -1,11 +1,10 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { toggleDone } from '@/lib/tasks';
+import { useTaskWriteRepo } from '@/contexts/TaskWriteRepoContext';
 import type { Task } from '@/types/task';
 import AddSubtaskModal from '@/components/AddSubtaskModal';
 import SubtaskList from '@/components/SubtaskList';
 import TaskDetailModal from '@/components/TaskDetailModal';
-import { softDeleteTask } from '@/lib/tasks';
 import { Plus, Minus } from 'lucide-react';
 
 export default function TaskItem({
@@ -59,6 +58,8 @@ export default function TaskItem({
   // 削除済みカラム以外では × を出す
   const showDelete = task.status !== 'deleted';
 
+  const write = useTaskWriteRepo();
+
   return (
     <div
       ref={innerRef as any}
@@ -82,7 +83,7 @@ export default function TaskItem({
           <input
             type="checkbox"
             checked={task.status === 'done'}
-            onChange={() => toggleDone(task)}
+            onChange={() => void write.toggleDone(task)}
           />
           <span
             className={

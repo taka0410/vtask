@@ -18,18 +18,28 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Subtask } from '@/types/subtask';
+import { getAuth } from 'firebase/auth';
+
+function requireUid(): string {
+  const u = getAuth().currentUser;
+  if (!u) throw new Error('Not authenticated');
+  return u.uid;
+}
 
 const SUBTASKS = collection(db, 'subtasks');
 
 /** 一覧購読（taskIdごと）— インデックス不要化のため orderBy は使わず、クライアント側で並び替え */
 export function listenSubtasks(
   taskId: string,
-  cb: (list: Subtask[]) => void
+  cb: (list: Subtask[]) => void,
 ): Unsubscribe {
+  const uid = requireUid();
+
   const q = query(
     SUBTASKS,
+    where('uid', '==', uid),
     where('taskId', '==', taskId),
-    where('deleted', '==', false)
+    where('deleted', '==', false),
   );
 
   return onSnapshot(q, (snap) => {
@@ -55,10 +65,12 @@ export function listenSubtasks(
 export async function createSubtask(
   taskId: string,
   title: string,
-  note: string = '' // ← 追加
+  note: string = '', // ← 追加
 ) {
   const t = (title ?? '').trim();
   if (!t) throw new Error('サブタスク名を入力してください');
+
+  const uid = requireUid();
 
   const ref = await addDoc(SUBTASKS, {
     taskId,
@@ -66,6 +78,7 @@ export async function createSubtask(
     note: note ?? '', // ← 追加
     done: false,
     deleted: false,
+    uid,
     order: Date.now(),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -94,11 +107,13 @@ export async function setSubtaskDone(id: string, done: boolean) {
 
   // 親タスクが分かる場合だけ親タスクも更新
   if (taskId) {
+    const uid = requireUid();
     // 親タスク配下の（削除されていない）サブタスクを全部取得
     const q = query(
       SUBTASKS,
+      where('uid', '==', uid),
       where('taskId', '==', taskId),
-      where('deleted', '==', false)
+      where('deleted', '==', false),
     );
     const siblingsSnap = await getDocs(q);
 
@@ -131,7 +146,7 @@ export async function toggleSubtaskDone(id: string, next: boolean) {
 /** 編集 */
 export async function updateSubtask(
   id: string,
-  patch: { title?: string; done?: boolean; note?: string } // ← note と done を許可
+  patch: { title?: string; done?: boolean; note?: string }, // ← note と done を許可
 ) {
   await updateDoc(doc(db, 'subtasks', id), {
     ...(patch.title !== undefined ? { title: (patch.title ?? '').trim() } : {}),
@@ -164,7 +179,13 @@ export async function reorderSubtasks(idsOrdered: string[]) {
 
 /** 親タスク配下を物理削除（必要なときだけ） */
 export async function hardDeleteAllSubtasksOf(taskId: string) {
-  const q = query(SUBTASKS, where('taskId', '==', taskId));
+  const uid = requireUid();
+
+  const q = query(
+    SUBTASKS,
+    where('uid', '==', uid),
+    where('taskId', '==', taskId),
+  );
   const snap = await getDocs(q);
   await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
 }

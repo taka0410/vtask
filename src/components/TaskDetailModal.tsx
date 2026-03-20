@@ -1,11 +1,10 @@
 'use client';
 import { useState } from 'react';
 import type { Task, Priority } from '@/types/task';
-import { updateTask } from '@/lib/tasks';
 import { useEffect } from 'react';
-import { softDeleteTask } from '@/lib/tasks';
 import { Trash2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { useTaskWriteRepo } from '@/contexts/TaskWriteRepoContext';
 
 /** 文字列内のURLを <a> に変換して表示する */
 function renderWithLinks(text: string) {
@@ -52,6 +51,7 @@ export default function TaskDetailModal({
   const [priority, setPriority] = useState<Priority>(task.priority);
   const [note, setNote] = useState(task.note ?? '');
   const [busy, setBusy] = useState(false);
+  const write = useTaskWriteRepo();
 
   useEffect(() => {
     if (open) document.body.classList.add('vtask-modal-open');
@@ -76,7 +76,7 @@ export default function TaskDetailModal({
 
     setBusy(true);
     try {
-      await updateTask(task.id, { title: title.trim(), priority, note });
+      await write.updateTask(task.id, { title: title.trim(), priority, note });
       // 成功したら閉じる
       setEdit(false);
       setOpen(false);
@@ -159,7 +159,7 @@ export default function TaskDetailModal({
                             return;
                           try {
                             setBusy(true);
-                            await softDeleteTask(task); // Firestore 上で削除扱い
+                            await write.softDeleteTask(task);
                             setOpen(false);
                           } catch (e: any) {
                             alert(e?.message || '削除に失敗しました');
@@ -218,6 +218,13 @@ export default function TaskDetailModal({
                       save();
                     }}
                     onKeyDownCapture={(e) => {
+                      // Enter単体は保存させない（フォーム送信を潰す）
+                      if (e.key === 'Enter' && !(e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        return;
+                      }
+
+                      // Ctrl+Enter / Cmd+Enter だけ保存
                       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                         e.preventDefault();
                         save();

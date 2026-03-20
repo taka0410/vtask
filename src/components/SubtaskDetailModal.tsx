@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import type { Subtask } from '@/types/subtask';
-import { updateSubtask, deleteSubtask } from '@/lib/subtasks';
+import { useSubtaskRepo } from '@/contexts/SubtaskRepoContext';
 import { createPortal } from 'react-dom';
 import { Trash2 } from 'lucide-react';
 
@@ -13,6 +13,7 @@ export default function SubtaskDetailModal({ st }: Props) {
   const [title, setTitle] = useState(st.title);
   const [note, setNote] = useState(st.note ?? '');
   const [busy, setBusy] = useState(false);
+  const repo = useSubtaskRepo();
 
   // 編集表示時はタイトルに自動フォーカス
   useEffect(() => {
@@ -30,7 +31,6 @@ export default function SubtaskDetailModal({ st }: Props) {
     setOpen(false);
     setEdit(false);
   };
-
   async function save() {
     if (!title.trim()) {
       alert('タイトルを入力してください');
@@ -39,7 +39,10 @@ export default function SubtaskDetailModal({ st }: Props) {
     if (busy) return;
     try {
       setBusy(true);
-      await updateSubtask(st.id, { title: title.trim(), note: note.trim() });
+      await repo.updateSubtask(st.id, {
+        title: title.trim(),
+        note: note.trim(),
+      });
       setEdit(false);
       setOpen(false);
     } catch (e: any) {
@@ -101,13 +104,13 @@ export default function SubtaskDetailModal({ st }: Props) {
                         onClick={async () => {
                           if (
                             !confirm(
-                              'このサブタスクを削除します。よろしいですか？'
+                              'このサブタスクを削除します。よろしいですか？',
                             )
                           )
                             return;
                           try {
                             setBusy(true);
-                            await deleteSubtask(st.id);
+                            await repo.deleteSubtask(st.id);
                             handleClose();
                           } catch (e: any) {
                             alert(e?.message || '削除に失敗しました');
@@ -154,7 +157,7 @@ export default function SubtaskDetailModal({ st }: Props) {
                           dangerouslySetInnerHTML={{
                             __html: note.replace(
                               /(https?:\/\/[^\s]+)/g,
-                              '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-500 underline">$1</a>'
+                              '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-500 underline">$1</a>',
                             ),
                           }}
                         />
@@ -218,7 +221,7 @@ export default function SubtaskDetailModal({ st }: Props) {
                 </div>
               </div>
             </div>,
-            document.body
+            document.body,
           )}
     </>
   );

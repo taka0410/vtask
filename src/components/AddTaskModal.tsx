@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { createTask } from '@/lib/tasks';
+import { useTaskWriteRepo } from '@/contexts/TaskWriteRepoContext';
 import type { Priority } from '@/types/task';
 import { createPortal } from 'react-dom';
 
@@ -15,6 +15,7 @@ export default function AddTaskModal({ defaultStatus, onClose }: Props) {
   const [priority, setPriority] = useState<Priority>('中');
   const [note, setNote] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const write = useTaskWriteRepo();
 
   // ★ モーダル開閉で <body> にクラスを付ける
   useEffect(() => {
@@ -44,7 +45,7 @@ export default function AddTaskModal({ defaultStatus, onClose }: Props) {
 
     try {
       setIsSaving(true);
-      await createTask({
+      await write.createTask({
         title: title.trim(),
         priority,
         note,
@@ -96,8 +97,7 @@ export default function AddTaskModal({ defaultStatus, onClose }: Props) {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  console.log('[submit] fired');
-                  void save();
+                  console.log('[submit] blocked');
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && e.ctrlKey) {
@@ -158,7 +158,7 @@ export default function AddTaskModal({ defaultStatus, onClose }: Props) {
               </form>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </>
   );

@@ -20,6 +20,13 @@ import { db } from '@/lib/firebase';
 import type { Priority, Status, Task } from '@/types/task';
 import { getDevUserId } from './devUser';
 import { hardDeleteAllSubtasksOf } from './subtasks'; // 使っていなければ削除可
+import { getAuth } from 'firebase/auth';
+
+function requireUid(): string {
+  const u = getAuth().currentUser;
+  if (!u) throw new Error('Not authenticated');
+  return u.uid;
+}
 
 // すべての操作対象
 const col = collection(db, 'tasks');
@@ -29,9 +36,9 @@ export async function createTask(input: {
   title: string;
   priority: Priority;
   note?: string;
-  status?: Status; // 'planned' | 'today' | 'done'
+  status?: Status;
 }) {
-  const uid = getDevUserId();
+  const uid = requireUid(); // ✅ 変更
   const title = (input.title ?? '').trim();
   if (!title) throw new Error('タイトルを入力してください');
 
@@ -40,11 +47,10 @@ export async function createTask(input: {
     priority: input.priority,
     note: input.note ?? '',
     status: input.status ?? 'today',
-    userId: uid,
+    uid, // ✅ userId → uid
     order: Date.now(),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-    // 旧 deleted フラグは使わず、status='trash' に統一します
   });
 
   console.log('[CREATE ok]', ref.id);
@@ -54,7 +60,7 @@ export async function createTask(input: {
 /* ========== ステータス移動/完了トグル ========== */
 export async function moveTask(
   id: string,
-  dest: 'planned' | 'today' | 'done'
+  dest: 'planned' | 'today' | 'done',
 ): Promise<void> {
   const ref = doc(db, 'tasks', id);
   await updateDoc(ref, {
@@ -68,7 +74,8 @@ export async function moveTask(
 
 // 完了トグル
 export async function toggleDone(task: Task) {
-  const toDone = task.status !== 'done'; // true なら完了側へ、false なら未完側へ
+  const uid = requireUid();
+  const toDone = task.status !== 'done';
   const newStatus: Status = toDone ? 'done' : 'today';
 
   const now = serverTimestamp();
@@ -76,7 +83,6 @@ export async function toggleDone(task: Task) {
 
   const taskRef = doc(db, 'tasks', task.id);
 
-  // 親タスク本体を更新
   batch.update(taskRef, {
     status: newStatus,
     deletedFrom: null,
@@ -85,11 +91,11 @@ export async function toggleDone(task: Task) {
     updatedAt: now,
   });
 
-  // 配下のサブタスクを一括で done / 未完 に揃える
   const qy = query(
     collection(db, 'subtasks'),
+    where('uid', '==', uid),
     where('taskId', '==', task.id),
-    where('deleted', '==', false)
+    where('deleted', '==', false),
   );
   const snap = await getDocs(qy);
 
@@ -111,14 +117,10 @@ export async function toggleDone(task: Task) {
  */
 export function listenTasks(
   status: Status,
-  cb: (tasks: Task[]) => void
+  cb: (tasks: Task[]) => void,
 ): Unsubscribe {
-  const uid = getDevUserId();
-  const qy = query(
-    col,
-    where('userId', '==', uid),
-    where('status', '==', status)
-  );
+  const uid = requireUid();
+  const qy = query(col, where('uid', '==', uid), where('status', '==', status));
 
   return onSnapshot(qy, (snap) => {
     const list: Task[] = snap.docs.map((d) => ({
@@ -141,7 +143,7 @@ export function listenTasks(
 /** ステータス内で「削除」→ ゴミ箱へ移動（soft delete） */
 export async function softDeleteTask(t: Task): Promise<void> {
   await updateDoc(doc(db, 'tasks', t.id), {
-    status: 'trash',
+    status: 'deleted',
     trashedAt: serverTimestamp(),
     deletedFrom: t.status ?? 'today', // 復元先を記録
     updatedAt: serverTimestamp(),
@@ -172,11 +174,11 @@ export async function hardDeleteTask(id: string): Promise<void> {
 
 /** ゴミ箱（status === 'trash'）だけを購読 */
 export function listenTrash(cb: (tasks: Task[]) => void): Unsubscribe {
-  const uid = getDevUserId();
+  const uid = requireUid();
   const qy = query(
     col,
-    where('userId', '==', uid),
-    where('status', '==', 'trash')
+    where('uid', '==', uid),
+    where('status', '==', 'deleted'),
   );
   return onSnapshot(qy, (snap) => {
     const list: Task[] = snap.docs.map((d) => ({
@@ -196,7 +198,8 @@ export function listenTrash(cb: (tasks: Task[]) => void): Unsubscribe {
 
 /** 完了カラムのタスクを一括でゴミ箱へ（“削除済みへ移動”） */
 export async function trashAllDoneTasks(): Promise<number> {
-  const qy = query(col, where('status', '==', 'done'));
+  const uid = requireUid();
+  const qy = query(col, where('uid', '==', uid), where('status', '==', 'done'));
   const snap = await getDocs(qy);
   if (snap.empty) return 0;
 
@@ -204,7 +207,7 @@ export async function trashAllDoneTasks(): Promise<number> {
   snap.forEach((d) => {
     const ref = doc(db, 'tasks', d.id);
     batch.update(ref, {
-      status: 'trash',
+      status: 'deleted',
       trashedAt: serverTimestamp(),
       deletedFrom: 'done',
       order: 0,
@@ -224,7 +227,7 @@ export async function trashDoneByIds(ids: string[]): Promise<number> {
   for (const id of ids) {
     const ref = doc(db, 'tasks', id);
     batch.update(ref, {
-      status: 'trash',
+      status: 'deleted',
       trashedAt: serverTimestamp(),
       deletedFrom: 'done',
       updatedAt: serverTimestamp(),
@@ -236,7 +239,13 @@ export async function trashDoneByIds(ids: string[]): Promise<number> {
 
 /** ゴミ箱を“完全削除”で空にする（物理削除） */
 export async function purgeAllTrash(): Promise<number> {
-  const qy = query(col, where('status', '==', 'trash'), limit(500));
+  const uid = requireUid();
+  const qy = query(
+    col,
+    where('uid', '==', uid),
+    where('status', '==', 'deleted'),
+    limit(500),
+  );
   const snap = await getDocs(qy);
   if (snap.empty) return 0;
 
@@ -262,7 +271,7 @@ export async function moveAndReorder(
   taskId: string,
   newStatus: Status,
   destIdsOrdered: string[],
-  srcIdsOrdered?: string[]
+  srcIdsOrdered?: string[],
 ) {
   const batch = writeBatch(db);
 
@@ -295,7 +304,7 @@ export async function moveAndReorder(
 
 export async function updateTask(
   taskId: string,
-  patch: { title?: string; priority?: Priority; note?: string }
+  patch: { title?: string; priority?: Priority; note?: string },
 ) {
   await updateDoc(doc(db, 'tasks', taskId), {
     ...(patch.title !== undefined ? { title: patch.title.trim() } : {}),
@@ -312,29 +321,33 @@ export async function fetchDoneTaskIds(): Promise<string[]> {
   return snap.docs.map((d) => d.id);
 }
 
+const AUTO_PURGE_KEY = 'vtask:autoPurgeTrash';
+
 // 自動削除フラグを取得
 export function getAutoPurgeFlag(): boolean {
-  if (typeof window === 'undefined') return false; // SSR対策
-  return localStorage.getItem('autoPurge') === 'true';
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(AUTO_PURGE_KEY) === '1';
 }
 
 // 自動削除フラグをセット
 export function setAutoPurgeFlag(value: boolean) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem('autoPurge', value ? 'true' : 'false');
+  localStorage.setItem(AUTO_PURGE_KEY, value ? '1' : '0');
 }
 
 // ゴミ箱内で3か月以上前のタスクを完全削除
 export async function purgeOldDeletedIfAutoOn() {
-  if (!getAutoPurgeFlag()) return; // フラグOFFなら何もしない
+  if (!getAutoPurgeFlag()) return;
 
+  const uid = requireUid();
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
   const q = query(
     collection(db, 'tasks'),
-    where('status', '==', 'trash'),
-    where('trashedAt', '<', threeMonthsAgo)
+    where('uid', '==', uid),
+    where('status', '==', 'deleted'),
+    where('trashedAt', '<', threeMonthsAgo),
   );
 
   const snap = await getDocs(q);

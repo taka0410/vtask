@@ -8,15 +8,17 @@ import {
   DropResult,
 } from '@hello-pangea/dnd';
 import TaskItem from '@/components/TaskItem';
-import { listenTasks, reorderColumnByIds, moveAndReorder } from '@/lib/tasks';
+import { useTasksRepo } from '@/contexts/TasksRepoContext';
 import type { Task, Status } from '@/types/task';
 import AddTaskModal from '@/components/AddTaskModal';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
-import { fetchDoneTaskIds, trashDoneByIds } from '@/lib/tasks';
+import { useAuth } from '@/contexts/AuthContext';
 
 type ColKey = 'planned' | 'today' | 'done';
 
 export default function TaskBoard() {
+  const repo = useTasksRepo();
+  const { isGuest } = useAuth(); // バナー用（任意）
   const [planned, setPlanned] = useState<Task[]>([]);
   const [today, setToday] = useState<Task[]>([]);
   const [done, setDone] = useState<Task[]>([]);
@@ -52,9 +54,9 @@ export default function TaskBoard() {
 
   // リアルタイム購読（3カラム）
   useEffect(() => {
-    const un1 = listenTasks('planned', setPlanned);
-    const un2 = listenTasks('today', setToday);
-    const un3 = listenTasks('done', setDone);
+    const un1 = repo.listenTasks('planned', setPlanned);
+    const un2 = repo.listenTasks('today', setToday);
+    const un3 = repo.listenTasks('done', setDone);
     return () => {
       un1();
       un2();
@@ -112,7 +114,7 @@ export default function TaskBoard() {
         return;
       }
 
-      const moved = await trashDoneByIds(ids);
+      const moved = await repo.trashDoneByIds(ids);
       // 先に busy を下ろしてからアラート（UIの体感を軽くする）
       setBusyTrashDone(false);
       console.log('[BUSY OFF]');
@@ -153,7 +155,7 @@ export default function TaskBoard() {
       );
       col.set(reordered); // まずはローカルでサクッと並べ替え
       // Firestoreへ order 確定
-      await reorderColumnByIds(reordered.map((t) => t.id));
+      await repo.reorderColumnByIds(reordered.map((t) => t.id));
       return;
     }
 
@@ -172,7 +174,7 @@ export default function TaskBoard() {
     dst.set(dstList);
 
     // Firestore：status変更 + 両カラムのorder確定
-    await moveAndReorder(
+    await repo.moveAndReorder(
       draggableId,
       dstCol as Status,
       dstList.map((t) => t.id),
@@ -314,29 +316,37 @@ export default function TaskBoard() {
   };
 
   return (
-    <DragDropContext
-      onDragStart={() => setDragging(true)}
-      onDragEnd={async (result) => {
-        setDragging(false);
-        await onDragEnd(result);
-      }}
-    >
-      <div
-        className="grid grid-cols-1 gap-4 p-4
-      md:grid-cols-3 md:grid-rows-2 md:h-[calc(100vh-65px)]"
+    <>
+      {isGuest && (
+        <div className="px-4 pt-3 text-xs text-zinc-300">
+          ゲストモード：この内容は保存されません
+        </div>
+      )}
+
+      <DragDropContext
+        onDragStart={() => setDragging(true)}
+        onDragEnd={async (result) => {
+          setDragging(false);
+          await onDragEnd(result);
+        }}
       >
-        {/* ① 予定タスク（左上） */}
-        {renderColumn('planned', 'md:row-start-1 md:col-start-1')}
+        <div
+          className="grid grid-cols-1 gap-4 p-4
+        md:grid-cols-3 md:grid-rows-2 md:h-[calc(100vh-65px)]"
+        >
+          {/* ① 予定タスク */}
+          {renderColumn('planned', 'md:row-start-1 md:col-start-1')}
 
-        {/* ③ 本日のタスク（右側を上下ぶち抜き・横幅2/3） */}
-        {renderColumn(
-          'today',
-          'md:row-start-1 md:col-start-2 md:row-span-2 md:col-span-2'
-        )}
+          {/* ③ 本日のタスク */}
+          {renderColumn(
+            'today',
+            'md:row-start-1 md:col-start-2 md:row-span-2 md:col-span-2'
+          )}
 
-        {/* ② 完了タスク（左下） */}
-        {renderColumn('done', 'md:row-start-2 md:col-start-1')}
-      </div>
-    </DragDropContext>
+          {/* ② 完了タスク */}
+          {renderColumn('done', 'md:row-start-2 md:col-start-1')}
+        </div>
+      </DragDropContext>
+    </>
   );
 }

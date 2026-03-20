@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import type { Subtask } from '@/types/subtask';
-import { updateSubtask } from '@/lib/subtasks';
+import { useSubtaskRepo } from '@/contexts/SubtaskRepoContext';
 import { createPortal } from 'react-dom';
 
 export default function EditSubtaskModal({ st }: { st: Subtask }) {
@@ -28,6 +28,7 @@ export default function EditSubtaskModal({ st }: { st: Subtask }) {
   }, [st.id]);
 
   const handleClose = () => setOpen(false);
+  const repo = useSubtaskRepo();
 
   async function save() {
     if (!title.trim()) {
@@ -38,7 +39,10 @@ export default function EditSubtaskModal({ st }: { st: Subtask }) {
 
     try {
       setBusy(true);
-      await updateSubtask(st.id, { title: title.trim(), note: note.trim() });
+      await repo.updateSubtask(st.id, {
+        title: title.trim(),
+        note: note.trim(),
+      });
       // 成功後に閉じる（保存前に閉じない）
       handleClose();
     } catch (e: any) {
@@ -132,7 +136,7 @@ export default function EditSubtaskModal({ st }: { st: Subtask }) {
                 </form>
               </div>
             </div>,
-            document.body
+            document.body,
           )}
     </>
   );

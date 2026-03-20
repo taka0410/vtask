@@ -1,22 +1,23 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { listenTasks } from '@/lib/tasks';
+import { useTasksRepo } from '@/contexts/TasksRepoContext';
 import type { Status, Task } from '@/types/task';
 import TaskItem from './TaskItem';
 
 export default function TaskList({ status }: { status: Status }) {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const repo = useTasksRepo();
 
   useEffect(() => {
     let stop: (() => void) | undefined;
     try {
-      stop = listenTasks(status, setTasks);
+      stop = repo.listenTasks(status as any, setTasks);
     } catch (e) {
       // 未ログインで呼ばれた時など
       console.warn(e);
     }
     return () => stop && stop();
-  }, [status]);
+  }, [repo, status]);
 
   return (
     <div>

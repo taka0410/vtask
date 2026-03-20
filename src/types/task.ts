@@ -7,12 +7,17 @@ export type Task = {
   priority: Priority;
   note?: string;
   status: Status;
-  userId: string;
+  uid: string;
   order?: number;
   createdAt?: any;
   updatedAt?: any;
-  deletedAt?: any;
+  trashedAt?: any;
+  deletedFrom?: Exclude<Status, 'deleted'>;
+  subtasks?: SubTask[];
+};
 
-  // ← これを追加（削除前に居た列を記録）
-  prevStatus?: Status;
+export type SubTask = {
+  id: string;
+  title: string;
+  done: boolean;
 };

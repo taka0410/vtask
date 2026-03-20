@@ -3,33 +3,24 @@
 
 import { useEffect, useState } from 'react';
 import type { Subtask } from '@/types/subtask';
-import { listenSubtasks } from '@/lib/subtasks';
+import { useSubtaskRepo } from '@/contexts/SubtaskRepoContext';
 import SubtaskItem from './SubtaskItem';
 
 export default function SubtaskList({ parentId }: { parentId: string }) {
+  const repo = useSubtaskRepo(); // ✅ ここに移動
   const [list, setList] = useState<Subtask[]>([]);
 
   useEffect(() => {
-    if (!parentId) {
-      setList([]);
-      return;
-    }
-    const unsub = listenSubtasks(parentId, (items: Subtask[]) =>
-      setList(items)
-    );
-    return () => {
-      try {
-        unsub();
-      } catch {
-        /* no-op */
-      }
-    };
-  }, [parentId]);
+    if (!parentId) return;
+
+    const unsub = repo.listenSubtasks(parentId, (items) => setList(items));
+    return () => unsub();
+  }, [parentId, repo]); // ✅ repoも依存に入れる
 
   return (
-    <div className="flex flex-col gap-1">
-      {list.map((st: Subtask) => (
-        <SubtaskItem key={st.id} st={st} />
+    <div className="mt-2 space-y-2">
+      {list.map((s) => (
+        <SubtaskItem key={s.id} st={s} />
       ))}
     </div>
   );

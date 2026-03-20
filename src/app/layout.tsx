@@ -2,7 +2,8 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-
+import { SubtaskRepoProviderClient } from '@/contexts/SubtaskRepoProviderClient';
+import { TaskRepoProvider } from '@/contexts/TaskRepoProvider';
 import { AuthProvider } from '@/contexts/AuthContext'; // ★追加（パスは後述）
 
 const geistSans = Geist({
@@ -29,7 +30,11 @@ export default function RootLayout({
     <html lang="ja">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <AuthProvider>
-          <main>{children}</main>
+           <TaskRepoProvider>
+          <SubtaskRepoProviderClient>
+            <main>{children}</main>
+          </SubtaskRepoProviderClient>
+          </TaskRepoProvider>
         </AuthProvider>
       </body>
     </html>
