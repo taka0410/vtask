@@ -34,7 +34,7 @@ export function GuestProvider({ children }: { children: React.ReactNode }) {
       title: 'ようこそ！これはゲスト体験です',
       priority: '中',
       status: 'today',
-      userId: 'guest',
+      uid: 'guest',
       subTasks: [
         { id: uid(), title: 'タスクを追加してみる', done: false },
         { id: uid(), title: 'サブタスクを追加してみる', done: false },
@@ -56,7 +56,7 @@ export function GuestProvider({ children }: { children: React.ReactNode }) {
       title: t,
       priority: '中',
       status: 'today',
-      userId: 'guest',
+      uid: 'guest',
       subTasks: [],
     };
 
@@ -77,7 +77,7 @@ export function GuestProvider({ children }: { children: React.ReactNode }) {
 
         if (task.subTasks.length >= GUEST_LIMITS.SUBTASK_MAX) {
           alert(
-            `ゲストモードではサブタスクは最大${GUEST_LIMITS.SUBTASK_MAX}件までです`
+            `ゲストモードではサブタスクは最大${GUEST_LIMITS.SUBTASK_MAX}件までです`,
           );
           return task;
         }
@@ -86,7 +86,7 @@ export function GuestProvider({ children }: { children: React.ReactNode }) {
           ...task,
           subTasks: [...task.subTasks, { id: uid(), title: t, done: false }],
         };
-      })
+      }),
     );
   };
 
@@ -97,16 +97,16 @@ export function GuestProvider({ children }: { children: React.ReactNode }) {
         return {
           ...task,
           subTasks: task.subTasks.map((s) =>
-            s.id === subTaskId ? { ...s, done: !s.done } : s
+            s.id === subTaskId ? { ...s, done: !s.done } : s,
           ),
         };
-      })
+      }),
     );
   };
 
   const value = useMemo(
     () => ({ tasks, addTask, deleteTask, addSubTask, toggleSubTask }),
-    [tasks]
+    [tasks],
   );
 
   return (
