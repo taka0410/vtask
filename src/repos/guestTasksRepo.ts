@@ -78,7 +78,7 @@ export function createGuestTasksRepo(): TasksRepo {
       taskId: string,
       newStatus: Status,
       dstIds: string[],
-      srcIds: string[]
+      srcIds: string[],
     ) {
       const cols: ColKey[] = ['planned', 'today', 'done'];
       const srcCol = cols.find((c) => state[c].some((t) => t.id === taskId));
@@ -133,7 +133,7 @@ export function createGuestTaskWriteRepo(): TaskWriteRepo {
         priority: input.priority,
         note: input.note ?? '',
         status,
-        userId: 'guest',
+        uid: 'guest',
         order: state[status].length,
         createdAt: now,
         updatedAt: now,
@@ -195,7 +195,7 @@ export function createGuestTaskWriteRepo(): TaskWriteRepo {
               note: patch.note,
               updatedAt: new Date(),
             }
-          : t
+          : t,
       );
 
       emit(col);
