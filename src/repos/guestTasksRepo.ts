@@ -34,6 +34,34 @@ function normalizeOrder(k: ColKey) {
   state[k] = state[k].map((t, i) => ({ ...t, order: i }));
 }
 
+export function syncGuestParentTaskStatus(parentId: string, allDone: boolean) {
+  const cols: ColKey[] = ['planned', 'today', 'done'];
+  const from = cols.find((c) => state[c].some((t) => t.id === parentId));
+  if (!from) return;
+
+  const task = state[from].find((t) => t.id === parentId);
+  if (!task) return;
+
+  const to: ColKey = allDone ? 'done' : 'today';
+
+  if (from === to) {
+    state[from] = state[from].map((t) =>
+      t.id === parentId ? { ...t, updatedAt: new Date() } : t,
+    );
+    emit(from);
+    return;
+  }
+
+  state[from] = state[from].filter((t) => t.id !== parentId);
+  normalizeOrder(from);
+
+  state[to] = [...state[to], { ...task, status: to, updatedAt: new Date() }];
+  normalizeOrder(to);
+
+  emit(from);
+  emit(to);
+}
+
 function findColByIds(ids: string[]): ColKey | null {
   const cols: ColKey[] = ['planned', 'today', 'done'];
   for (const c of cols) {

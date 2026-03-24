@@ -97,7 +97,6 @@ export default function AddTaskModal({ defaultStatus, onClose }: Props) {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  console.log('[submit] blocked');
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && e.ctrlKey) {
@@ -144,10 +143,11 @@ export default function AddTaskModal({ defaultStatus, onClose }: Props) {
                   </button>
 
                   <button
-                    type="submit"
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation?.();
                       console.log('[click] 保存');
+                      void save();
                     }}
                     className="bg-black text-white px-3 py-1 rounded cursor-pointer disabled:opacity-50"
                     disabled={isSaving}

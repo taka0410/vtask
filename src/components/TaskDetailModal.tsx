@@ -215,19 +215,20 @@ export default function TaskDetailModal({
                     className="space-y-3"
                     onSubmit={(e) => {
                       e.preventDefault();
-                      save();
                     }}
                     onKeyDownCapture={(e) => {
-                      // Enter単体は保存させない（フォーム送信を潰す）
-                      if (e.key === 'Enter' && !(e.ctrlKey || e.metaKey)) {
-                        e.preventDefault();
-                        return;
-                      }
+                      const target = e.target as HTMLElement;
 
                       // Ctrl+Enter / Cmd+Enter だけ保存
                       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                         e.preventDefault();
-                        save();
+                        void save();
+                        return;
+                      }
+
+                      // textarea 以外の Enter 単体だけ潰す
+                      if (e.key === 'Enter' && target.tagName !== 'TEXTAREA') {
+                        e.preventDefault();
                       }
                     }}
                   >
@@ -301,7 +302,7 @@ export default function TaskDetailModal({
                 </div>
               </div>
             </div>,
-            document.body
+            document.body,
           )}
     </>
   );

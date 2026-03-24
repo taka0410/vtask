@@ -1,5 +1,6 @@
 import type { SubtaskRepo } from '@/contexts/SubtaskRepoContext';
 import type { Subtask } from '@/types/subtask';
+import { syncGuestParentTaskStatus } from '@/repos/guestTasksRepo';
 
 type Listener = (items: Subtask[]) => void;
 
@@ -69,7 +70,6 @@ export const guestSubtaskRepo: SubtaskRepo = {
   },
 
   async setSubtaskDone(subtaskId, done) {
-    // id から親(parentId)を逆引きして更新
     for (const [parentId, list] of store.entries()) {
       const idx = list.findIndex((s) => s.id === subtaskId);
       if (idx === -1) continue;
@@ -78,6 +78,9 @@ export const guestSubtaskRepo: SubtaskRepo = {
       next[idx] = { ...next[idx], done, updatedAt: new Date() };
       store.set(parentId, next);
       emit(parentId);
+
+      const allDone = next.length > 0 && next.every((s) => s.done);
+      syncGuestParentTaskStatus(parentId, allDone);
       return;
     }
   },
