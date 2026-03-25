@@ -67,7 +67,7 @@ export default function TaskItem({
       className="py-2 group"
     >
       {/* 親タスク 1行（タイトル行） */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <label className="flex items-center gap-2">
           {/* 並べ替えハンドル（ここにだけ dragHandleProps を付与） */}
           <span
@@ -102,8 +102,8 @@ export default function TaskItem({
           </span>
         </label>
 
-        {/* 右端アクション（＋/－ トグル → ドロップダウン） */}
-        <div className="ml-auto relative pr-2">
+        {/* 右端アクション（＋/－ トグル → インライン展開） */}
+        <div className="ml-auto pr-2 flex flex-col items-end">
           {/* トグル（＋→－） */}
           <button
             type="button"
@@ -121,23 +121,21 @@ export default function TaskItem({
             )}
           </button>
 
-          {/* メニュー本体（アコーディオン） */}
+          {/* メニュー本体（通常フロー内で開く） */}
           <div
             ref={menuRef}
-            className={`absolute right-2 mt-2 z-40 w-40 rounded border border-zinc-700 bg-zinc-900 shadow-lg
-                overflow-hidden transition-[max-height,opacity] duration-200
-                ${actOpen ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}
+            className={`mt-2 w-40 rounded border border-zinc-700 bg-zinc-900 shadow-lg
+      overflow-hidden transition-[max-height,opacity] duration-200
+      ${actOpen ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-2 flex flex-col gap-2">
-              {/* 詳細：ボタンを押した瞬間にアコーディオンを閉じる */}
               <TaskDetailModal
                 task={task}
                 buttonClassName={DROPDOWN_BTN}
                 onOpen={() => setActOpen(false)}
               />
 
-              {/* サブタスク追加：同じくボタン押下時にアコーディオンを閉じる */}
               <AddSubtaskModal
                 parentId={task.id}
                 variant="text"
