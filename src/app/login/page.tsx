@@ -56,7 +56,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center p-6">
       <div className="bg-neutral-800/40 border border-neutral-700 rounded-2xl w-[min(440px,92vw)] p-8 shadow-xl">
-        <h1 className="text-3xl font-extrabold text-center mb-6">Vtask</h1>
+        <h1 className="text-3xl font-extrabold text-center mb-6">Vitask</h1>
 
         <form onSubmit={onEmailLogin} className="flex flex-col gap-4">
           <input

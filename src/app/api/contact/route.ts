@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     if (!name || !email || !message) {
       return NextResponse.json(
         { ok: false, error: 'invalid_input' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -23,18 +23,29 @@ export async function POST(req: Request) {
       <p>送信日時: ${new Date().toLocaleString('ja-JP')}</p>
     `;
 
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from: process.env.MAIL_FROM!,
       to: process.env.MAIL_TO!,
-      replyTo: email, // 返信ボタンで送信者へ返せる
-      subject: '【Vtask】お問い合わせ',
+      replyTo: email,
+      subject: '【Vitask】お問い合わせ',
       html,
     });
+
+    if ((result as any)?.error) {
+      console.error('contact_send_error', (result as any).error);
+      return NextResponse.json(
+        { ok: false, error: 'mail_send_failed' },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error('contact_send_error', e);
-    return NextResponse.json({ ok: false }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: 'mail_send_failed' },
+      { status: 500 },
+    );
   }
 }
 

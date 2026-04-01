@@ -30,7 +30,7 @@ export default function AppPage() {
         <header className="flex items-center justify-between p-4 border-b">
           <h1 className="font-bold text-xl text-indigo-600 flex items-center gap-2">
             <CheckSquare className="w-6 h-6 text-indigo-600" />
-            Vtask
+            Vitask
           </h1>
 
           <div className="flex items-center gap-3">

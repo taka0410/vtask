@@ -12,7 +12,7 @@ export default function Home() {
               V
             </span>
             <span className="text-base font-semibold tracking-tight sm:text-lg">
-              Vtask
+              Vitask
             </span>
           </div>
 
@@ -52,7 +52,7 @@ export default function Home() {
           </h1>
 
           <p className="text-slate-300 text-sm md:text-base max-w-2xl mb-6">
-            Vtask は、日々のタスクを直感的に管理できるシンプルなアプリです。
+            Vitask は、日々のタスクを直感的に管理できるシンプルなアプリです。
             PC・スマホどちらでも使いやすく、今日やるべきことに集中できます。
           </p>
 
@@ -110,7 +110,7 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="border-t border-slate-800 pt-4 text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} Vtask. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Vitask. All rights reserved.</p>
         </footer>
       </div>
     </main>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const CANONICAL_HOST = 'vtask-xfq3.vercel.app';
+const CANONICAL_HOST = 'vitask-jp.vercel.app';
 
 export function middleware(req: NextRequest) {
   const host = req.headers.get('host');
