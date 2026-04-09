@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -56,7 +57,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center p-6">
       <div className="bg-neutral-800/40 border border-neutral-700 rounded-2xl w-[min(440px,92vw)] p-8 shadow-xl">
-        <h1 className="text-3xl font-extrabold text-center mb-6">Vitask</h1>
+        <Link href="/">
+          <h1 className="text-3xl font-extrabold text-center mb-6 hover:opacity-75 transition cursor-pointer">Vitask</h1>
+        </Link>
 
         <div className="mb-0 grid grid-cols-2 gap-0">
           <button
