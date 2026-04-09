@@ -7,33 +7,33 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  GoogleAuthProvider,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { GoogleAuthProvider } from 'firebase/auth';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const onEmailLogin = async (e: React.FormEvent) => {
+  const onEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
     try {
-      // まずはサインイン、未登録なら自動サインアップ（任意）
-      await signInWithEmailAndPassword(auth, email, pw).catch(async (err) => {
-        if (err.code === 'auth/user-not-found') {
-          await createUserWithEmailAndPassword(auth, email, pw);
-        } else {
-          throw err;
-        }
-      });
-      router.push('/app'); // ログイン後のトップへ
+      if (mode === 'login') {
+        await signInWithEmailAndPassword(auth, email, pw);
+      } else {
+        await createUserWithEmailAndPassword(auth, email, pw);
+      }
+
+      router.push('/app');
     } catch (e: any) {
-      setError(e?.message ?? 'ログインに失敗しました');
+      setError(e?.message ?? '認証に失敗しました');
     } finally {
       setLoading(false);
     }
@@ -58,7 +58,42 @@ export default function LoginPage() {
       <div className="bg-neutral-800/40 border border-neutral-700 rounded-2xl w-[min(440px,92vw)] p-8 shadow-xl">
         <h1 className="text-3xl font-extrabold text-center mb-6">Vitask</h1>
 
-        <form onSubmit={onEmailLogin} className="flex flex-col gap-4">
+        <div className="mb-0 grid grid-cols-2 gap-0">
+          <button
+            type="button"
+            onClick={() => {
+              setMode('login');
+              setError(null);
+            }}
+            className={`rounded-t-md rounded-b-none border py-2 text-sm font-semibold cursor-pointer transition ${
+              mode === 'login'
+                ? 'bg-violet-600 text-white border-violet-500 border-b-transparent'
+                : 'bg-neutral-900 text-neutral-300 border-neutral-600 hover:bg-neutral-800'
+            }`}
+          >
+            ログイン
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setMode('signup');
+              setError(null);
+            }}
+            className={`rounded-t-md rounded-b-none border py-2 text-sm font-semibold cursor-pointer transition ${
+              mode === 'signup'
+                ? 'bg-violet-600 text-white border-violet-500 border-b-transparent'
+                : 'bg-neutral-900 text-neutral-300 border-neutral-600 hover:bg-neutral-800'
+            }`}
+          >
+            新規登録
+          </button>
+        </div>
+
+        <form
+          onSubmit={onEmailSubmit}
+          className="flex flex-col gap-4 border border-neutral-700 border-t-0 rounded-b-2xl p-4"
+        >
           <input
             type="email"
             placeholder="email@domain.com"
@@ -84,20 +119,30 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full mt-1 bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white font-semibold py-2 rounded-md cursor-pointer transition"
           >
-            {loading ? '処理中…' : 'メールアドレスでログイン'}
+            {loading
+              ? '処理中…'
+              : mode === 'login'
+                ? 'メールアドレスでログイン'
+                : 'メールアドレスで新規登録'}
           </button>
         </form>
 
-        <div className="my-4 text-center text-sm text-neutral-400">または</div>
+        {mode === 'login' && (
+          <>
+            <div className="my-4 text-center text-sm text-neutral-400">
+              または
+            </div>
 
-        <button
-          type="button"
-          disabled={loading}
-          onClick={onGoogleLogin}
-          className="w-full border border-neutral-600 hover:bg-neutral-800 disabled:opacity-60 text-white font-semibold py-2 rounded-md cursor-pointer transition"
-        >
-          Googleでログイン
-        </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={onGoogleLogin}
+              className="w-full border border-neutral-600 hover:bg-neutral-800 disabled:opacity-60 text-white font-semibold py-2 rounded-md cursor-pointer transition"
+            >
+              Googleでログイン
+            </button>
+          </>
+        )}
 
         {/* 開発用ゲストボタン（必要なら） */}
         {/* <button
