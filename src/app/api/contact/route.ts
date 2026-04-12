@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER!,
+    pass: process.env.GMAIL_APP_PASSWORD!,
+  },
+});
 
 export async function POST(req: Request) {
   try {
@@ -23,21 +29,13 @@ export async function POST(req: Request) {
       <p>送信日時: ${new Date().toLocaleString('ja-JP')}</p>
     `;
 
-    const result = await resend.emails.send({
-      from: process.env.MAIL_FROM!,
-      to: process.env.MAIL_TO!,
+    await transporter.sendMail({
+      from: `Vitask <${process.env.GMAIL_USER}>`,
+      to: process.env.GMAIL_USER!,
       replyTo: email,
       subject: '【Vitask】お問い合わせ',
       html,
     });
-
-    if ((result as any)?.error) {
-      console.error('contact_send_error', (result as any).error);
-      return NextResponse.json(
-        { ok: false, error: 'mail_send_failed' },
-        { status: 500 },
-      );
-    }
 
     return NextResponse.json({ ok: true });
   } catch (e) {
