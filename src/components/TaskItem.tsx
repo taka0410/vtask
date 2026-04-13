@@ -102,8 +102,8 @@ export default function TaskItem({
           </span>
         </label>
 
-        {/* 右端アクション（＋/－ トグル → インライン展開） */}
-        <div className="ml-auto pr-2 flex flex-col items-end">
+        {/* 右端アクション（＋/－ トグル → 絶対位置で展開） */}
+        <div className="ml-auto pr-2 flex flex-col items-end relative">
           {/* トグル（＋→－） */}
           <button
             type="button"
@@ -121,12 +121,12 @@ export default function TaskItem({
             )}
           </button>
 
-          {/* メニュー本体（通常フロー内で開く） */}
+          {/* メニュー本体（absoluteで浮かせて下コンテンツに影響しない） */}
           <div
             ref={menuRef}
-            className={`mt-2 w-40 rounded border border-zinc-700 bg-zinc-900 shadow-lg
-      overflow-hidden transition-[max-height,opacity] duration-200
-      ${actOpen ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}
+            className={`absolute top-10 right-0 z-50 w-40 rounded border border-zinc-700 bg-zinc-900 shadow-lg
+      overflow-hidden transition-[opacity] duration-150
+      ${actOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-2 flex flex-col gap-2">
