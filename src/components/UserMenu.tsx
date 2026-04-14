@@ -47,7 +47,10 @@ export default function UserMenu() {
         className="flex items-center gap-2 rounded px-3 py-1 bg-white/10 hover:bg-white/20 text-gray-200 cursor-pointer"
         title={userName}
       >
-        <span className="max-w-[14rem] truncate">{userName}</span>
+        <span className="sm:hidden">
+          {userName.length > 6 ? userName.slice(0, 6) + '…' : userName}
+        </span>
+        <span className="hidden sm:inline max-w-[14rem] truncate">{userName}</span>
         <svg
           className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`}
           viewBox="0 0 20 20"
