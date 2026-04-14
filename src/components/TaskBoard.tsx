@@ -259,13 +259,12 @@ export default function TaskBoard() {
               <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className={`select-none flex-1 scrollbar-dark-thin ${
+                className={`select-none flex-1 scrollbar-dark-thin overflow-visible md:overflow-y-auto ${
                   snapshot.isDraggingOver ? 'bg-zinc-700/60' : ''
                 }`}
                 style={{
                   paddingTop: isEmpty ? 8 : 4,
                   paddingBottom: 24, // 常に少しだけ余白
-                  overflowY: 'auto', // ここだけスクロール
                   position: 'relative',
                 }}
               >
