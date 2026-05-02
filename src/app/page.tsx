@@ -1,5 +1,6 @@
 // src/app/page.tsx
 import Link from 'next/link';
+import VideoPlayer from '@/components/VideoPlayer';
 
 export default function Home() {
   return (
@@ -76,6 +77,11 @@ export default function Home() {
               体験してみる
             </Link>
           </div>
+        </section>
+
+        {/* Demo Video */}
+        <section className="mb-12 md:mb-16">
+          <VideoPlayer src="/vitask-explanation.mp4" />
         </section>
 
         {/* Features */}
